@@ -7,7 +7,7 @@ use resvg::tiny_skia::Pixmap;
 use smallvec::SmallVec;
 use std::{
     hash::Hash,
-    sync::{Arc, LazyLock},
+    sync::{Arc, LazyLock, OnceLock},
 };
 
 #[cfg(target_os = "macos")]
@@ -111,17 +111,23 @@ impl SvgRenderer {
             Arc::new(db)
         });
 
-        let fontdb = {
-            let mut db = (**SYSTEM_FONT_DB).clone();
-            load_bundled_fonts(&*asset_source, &mut db);
-            fix_generic_font_families(&mut db);
-            Arc::new(db)
-        };
+        // Build the enriched font DB lazily on first SVG render rather than
+        // eagerly at construction time. This avoids the expensive deep-clone
+        // of the system font database for code paths that never render SVGs
+        // (e.g. tests).
+        let enriched_fontdb: Arc<OnceLock<Arc<usvg::fontdb::Database>>> = Arc::new(OnceLock::new());
 
         let default_font_resolver = usvg::FontResolver::default_font_selector();
-        let font_resolver = Box::new(
+        let font_resolver = Box::new({
+            let asset_source = asset_source.clone();
             move |font: &usvg::Font, db: &mut Arc<usvg::fontdb::Database>| {
                 if db.is_empty() {
+                    let fontdb = enriched_fontdb.get_or_init(|| {
+                        let mut db = (**SYSTEM_FONT_DB).clone();
+                        load_bundled_fonts(&*asset_source, &mut db);
+                        fix_generic_font_families(&mut db);
+                        Arc::new(db)
+                    });
                     *db = fontdb.clone();
                 }
                 if let Some(id) = default_font_resolver(font, db) {
@@ -135,8 +141,8 @@ impl SvgRenderer {
                 };
                 db.query(&sans_query)
                     .or_else(|| db.faces().next().map(|f| f.id))
-            },
-        );
+            }
+        });
         let default_fallback_selection = usvg::FontResolver::default_fallback_selector();
         let fallback_selection = Box::new(
             move |ch: char, fonts: &[usvg::fontdb::ID], db: &mut Arc<usvg::fontdb::Database>| {
@@ -222,12 +228,29 @@ impl SvgRenderer {
     }
 
     fn render_pixmap(&self, bytes: &[u8], size: SvgSize) -> Result<Pixmap, usvg::Error> {
+        // Cap the size of the rendered pixmap to avoid texture allocation panics
+        // Related issue: #56466
+        const MAX_SIZE: f32 = 8192.0;
+
         let tree = usvg::Tree::from_data(bytes, &self.usvg_options)?;
         let svg_size = tree.size();
-        let scale = match size {
+        let mut scale = match size {
             SvgSize::Size(size) => size.width.0 as f32 / svg_size.width(),
             SvgSize::ScaleFactor(scale) => scale,
         };
+
+        let width = svg_size.width() * scale;
+        if width > MAX_SIZE {
+            log::warn!("Attempted to render pixmap where width ({width}) > MAX_SIZE ({MAX_SIZE})");
+            scale *= MAX_SIZE / width;
+        }
+        let height = svg_size.height() * scale;
+        if height > MAX_SIZE {
+            log::warn!(
+                "Attempted to render pixmap where height ({height}) > MAX_SIZE ({MAX_SIZE})"
+            );
+            scale *= MAX_SIZE / height;
+        }
 
         // Render the SVG to a pixmap with the specified width and height.
         let mut pixmap = resvg::tiny_skia::Pixmap::new(
@@ -305,6 +328,31 @@ mod tests {
         db.load_font_data(IBM_PLEX_REGULAR.to_vec());
         db.load_font_data(LILEX_REGULAR.to_vec());
         db
+    }
+
+    #[test]
+    fn text_with_split_glyph_clusters_in_mixed_fonts_does_not_panic() {
+        let mut db = Database::new();
+        db.load_font_data(IBM_PLEX_REGULAR.to_vec());
+        db.load_font_data(LILEX_REGULAR.to_vec());
+        let options = usvg::Options {
+            fontdb: std::sync::Arc::new(db),
+            ..Default::default()
+        };
+
+        // A base letter followed by a stack of combining marks. Under HarfBuzz's
+        // default cluster merging every mark glyph shares the base's byte index,
+        // which is the "glyph splitting" condition that triggered the panic. The
+        // chunk must use two different fonts so the buggy merge path runs.
+        let zalgo = "e\u{0301}\u{0302}\u{0303}\u{0304}\u{0306}\u{0307}\u{0308}\u{030a}";
+        let svg = format!(
+            r#"<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><text font-family="Lilex" font-size="32">{zalgo}<tspan font-family="IBM Plex Sans">{zalgo}</tspan></text></svg>"#
+        );
+
+        // Before the fix this aborts via panic with a message like
+        // "removal index (is 5) should be < len (is 5)".
+        usvg::Tree::from_data(svg.as_bytes(), &options)
+            .expect("SVG with mixed-font text should parse");
     }
 
     #[test]

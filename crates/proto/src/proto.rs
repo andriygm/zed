@@ -64,6 +64,10 @@ messages!(
     (DeleteChannel, Foreground),
     (DeleteNotification, Foreground),
     (DeleteProjectEntry, Foreground),
+    (TrashProjectEntry, Foreground),
+    (TrashProjectEntryResponse, Foreground),
+    (RestoreProjectEntry, Foreground),
+    (RestoreProjectEntryResponse, Foreground),
     (DownloadFileByPath, Background),
     (DownloadFileResponse, Background),
     (EndStream, Foreground),
@@ -94,6 +98,10 @@ messages!(
     (GetDeclarationResponse, Background),
     (GetDefinition, Background),
     (GetDefinitionResponse, Background),
+    (GetEditPredictionDefinition, Background),
+    (GetEditPredictionDefinitionResponse, Background),
+    (GetEditPredictionTypeDefinition, Background),
+    (GetEditPredictionTypeDefinitionResponse, Background),
     (GetDocumentHighlights, Background),
     (GetDocumentHighlightsResponse, Background),
     (GetDocumentSymbols, Background),
@@ -224,11 +232,17 @@ messages!(
     (GetDocumentColorResponse, Background),
     (GetColorPresentation, Background),
     (GetColorPresentationResponse, Background),
+    (GetDocumentLinks, Background),
+    (GetDocumentLinksResponse, Background),
+    (ResolveDocumentLink, Background),
+    (ResolveDocumentLinkResponse, Background),
     (GetFoldingRanges, Background),
     (GetFoldingRangesResponse, Background),
     (RefreshCodeLens, Background),
     (GetCodeLens, Background),
     (GetCodeLensResponse, Background),
+    (ResolveCodeAction, Background),
+    (ResolveCodeActionResponse, Background),
     (RespondToChannelInvite, Foreground),
     (RespondToContactRequest, Foreground),
     (RestartLanguageServers, Foreground),
@@ -255,6 +269,7 @@ messages!(
     (SynchronizeBuffersResponse, Foreground),
     (TaskContext, Background),
     (TaskContextForLocation, Background),
+    (TelemetryEvent, Background),
     (Test, Foreground),
     (Toast, Background),
     (Unfollow, Foreground),
@@ -290,13 +305,16 @@ messages!(
     (GitReset, Background),
     (GitDeleteBranch, Background),
     (GitCheckoutFiles, Background),
+    (GitAddPathToGitignore, Background),
+    (GitAddPathToGitInfoExclude, Background),
     (GitShow, Background),
     (GitCommitDetails, Background),
-    (GitFileHistory, Background),
-    (GitFileHistoryResponse, Background),
     (GitCreateCheckpoint, Background),
     (GitCreateCheckpointResponse, Background),
+    (GitCreateArchiveCheckpoint, Background),
+    (GitCreateArchiveCheckpointResponse, Background),
     (GitRestoreCheckpoint, Background),
+    (GitRestoreArchiveCheckpoint, Background),
     (GitCompareCheckpoints, Background),
     (GitCompareCheckpointsResponse, Background),
     (GitDiffCheckpoints, Background),
@@ -336,6 +354,8 @@ messages!(
     (GetTreeDiffResponse, Background),
     (GetBlobContent, Background),
     (GetBlobContentResponse, Background),
+    (LoadCommitTemplate, Background),
+    (LoadCommitTemplateResponse, Background),
     (GitClone, Background),
     (GitCloneResponse, Background),
     (ToggleLspLogs, Background),
@@ -353,13 +373,20 @@ messages!(
     (GitGetWorktrees, Background),
     (GitGetHeadSha, Background),
     (GitGetHeadShaResponse, Background),
+    (GitEditRef, Background),
+    (GitRepairWorktrees, Background),
+    (GetCommitData, Background),
+    (GetCommitDataResponse, Background),
+    (GetInitialGraphData, Background),
+    (GetInitialGraphDataResponse, Background),
+    (SearchCommits, Background),
+    (SearchCommitsResponse, Background),
     (GitWorktreesResponse, Background),
     (GitCreateWorktree, Background),
     (GitRemoveWorktree, Background),
     (GitRenameWorktree, Background),
-    (ShareAgentThread, Foreground),
-    (GetSharedAgentThread, Foreground),
-    (GetSharedAgentThreadResponse, Foreground),
+    (GitWorktreeCreatedAt, Background),
+    (GitWorktreeCreatedAtResponse, Background),
     (FindSearchCandidatesChunk, Background),
     (FindSearchCandidatesCancelled, Background),
     (SpawnKernel, Background),
@@ -387,6 +414,8 @@ request_messages!(
     (DeclineCall, Ack),
     (DeleteChannel, Ack),
     (DeleteProjectEntry, ProjectEntryResponse),
+    (TrashProjectEntry, TrashProjectEntryResponse),
+    (RestoreProjectEntry, RestoreProjectEntryResponse),
     (DownloadFileByPath, DownloadFileResponse),
     (ExpandProjectEntry, ExpandProjectEntryResponse),
     (ExpandAllForProjectEntry, ExpandAllForProjectEntryResponse),
@@ -400,6 +429,14 @@ request_messages!(
     (GetCodeActions, GetCodeActionsResponse),
     (GetCompletions, GetCompletionsResponse),
     (GetDefinition, GetDefinitionResponse),
+    (
+        GetEditPredictionDefinition,
+        GetEditPredictionDefinitionResponse
+    ),
+    (
+        GetEditPredictionTypeDefinition,
+        GetEditPredictionTypeDefinitionResponse
+    ),
     (GetDeclaration, GetDeclarationResponse),
     (GetImplementation, GetImplementationResponse),
     (GetDocumentHighlights, GetDocumentHighlightsResponse),
@@ -459,7 +496,10 @@ request_messages!(
         ResolveCompletionDocumentationResponse
     ),
     (ResolveInlayHint, ResolveInlayHintResponse),
+    (ResolveCodeAction, ResolveCodeActionResponse),
     (GetDocumentColor, GetDocumentColorResponse),
+    (GetDocumentLinks, GetDocumentLinksResponse),
+    (ResolveDocumentLink, ResolveDocumentLinkResponse),
     (GetFoldingRanges, GetFoldingRangesResponse),
     (GetColorPresentation, GetColorPresentationResponse),
     (RespondToChannelInvite, Ack),
@@ -470,8 +510,6 @@ request_messages!(
     (SendChannelMessage, SendChannelMessageResponse),
     (SetChannelMemberRole, Ack),
     (SetChannelVisibility, Ack),
-    (ShareAgentThread, Ack),
-    (GetSharedAgentThread, GetSharedAgentThreadResponse),
     (ShareProject, ShareProjectResponse),
     (SynchronizeBuffers, SynchronizeBuffersResponse),
     (TaskContextForLocation, TaskContext),
@@ -522,14 +560,20 @@ request_messages!(
     (InstallExtension, Ack),
     (RegisterBufferWithLanguageServers, Ack),
     (GitShow, GitCommitDetails),
-    (GitFileHistory, GitFileHistoryResponse),
     (GitCreateCheckpoint, GitCreateCheckpointResponse),
+    (
+        GitCreateArchiveCheckpoint,
+        GitCreateArchiveCheckpointResponse
+    ),
     (GitRestoreCheckpoint, Ack),
+    (GitRestoreArchiveCheckpoint, Ack),
     (GitCompareCheckpoints, GitCompareCheckpointsResponse),
     (GitDiffCheckpoints, GitDiffCheckpointsResponse),
     (GitReset, Ack),
     (GitDeleteBranch, Ack),
     (GitCheckoutFiles, Ack),
+    (GitAddPathToGitignore, Ack),
+    (GitAddPathToGitInfoExclude, Ack),
     (SetIndexText, Ack),
     (Push, RemoteMessageResponse),
     (Fetch, RemoteMessageResponse),
@@ -551,6 +595,7 @@ request_messages!(
     (PullWorkspaceDiagnostics, Ack),
     (GetDefaultBranch, GetDefaultBranchResponse),
     (GetBlobContent, GetBlobContentResponse),
+    (LoadCommitTemplate, LoadCommitTemplateResponse),
     (GetTreeDiff, GetTreeDiffResponse),
     (GitClone, GitCloneResponse),
     (ToggleLspLogs, Ack),
@@ -561,9 +606,15 @@ request_messages!(
     (RemoteStarted, Ack),
     (GitGetWorktrees, GitWorktreesResponse),
     (GitGetHeadSha, GitGetHeadShaResponse),
+    (GitEditRef, Ack),
+    (GitRepairWorktrees, Ack),
+    (GetCommitData, GetCommitDataResponse),
+    (GetInitialGraphData, GetInitialGraphDataResponse),
+    (SearchCommits, SearchCommitsResponse),
     (GitCreateWorktree, Ack),
     (GitRemoveWorktree, Ack),
     (GitRenameWorktree, Ack),
+    (GitWorktreeCreatedAt, GitWorktreeCreatedAtResponse),
     (TrustWorktrees, Ack),
     (RestrictWorktrees, Ack),
     (FindSearchCandidatesChunk, Ack),
@@ -577,12 +628,23 @@ lsp_messages!(
     (GetDocumentColor, GetDocumentColorResponse, true),
     (GetFoldingRanges, GetFoldingRangesResponse, true),
     (GetDocumentSymbols, GetDocumentSymbolsResponse, true),
+    (GetDocumentLinks, GetDocumentLinksResponse, true),
     (GetHover, GetHoverResponse, true),
     (GetCodeActions, GetCodeActionsResponse, true),
     (GetSignatureHelp, GetSignatureHelpResponse, true),
     (GetCodeLens, GetCodeLensResponse, true),
     (GetDocumentDiagnostics, GetDocumentDiagnosticsResponse, true),
     (GetDefinition, GetDefinitionResponse, true),
+    (
+        GetEditPredictionDefinition,
+        GetEditPredictionDefinitionResponse,
+        true
+    ),
+    (
+        GetEditPredictionTypeDefinition,
+        GetEditPredictionTypeDefinitionResponse,
+        true
+    ),
     (GetDeclaration, GetDeclarationResponse, true),
     (GetTypeDefinition, GetTypeDefinitionResponse, true),
     (GetImplementation, GetImplementationResponse, true),
@@ -610,8 +672,12 @@ entity_messages!(
     CreateImageForPeer,
     CreateProjectEntry,
     GetDocumentColor,
+    GetDocumentLinks,
+    ResolveDocumentLink,
     GetFoldingRanges,
     DeleteProjectEntry,
+    TrashProjectEntry,
+    RestoreProjectEntry,
     ExpandProjectEntry,
     ExpandAllForProjectEntry,
     FindSearchCandidates,
@@ -621,6 +687,8 @@ entity_messages!(
     GetCodeLens,
     GetCompletions,
     GetDefinition,
+    GetEditPredictionDefinition,
+    GetEditPredictionTypeDefinition,
     GetDeclaration,
     GetImplementation,
     GetDocumentHighlights,
@@ -661,6 +729,7 @@ entity_messages!(
     RenameProjectEntry,
     ResolveCompletionDocumentation,
     ResolveInlayHint,
+    ResolveCodeAction,
     SaveBuffer,
     Stage,
     StartLanguageServer,
@@ -693,6 +762,7 @@ entity_messages!(
     LspExtRunFlycheck,
     LspExtClearFlycheck,
     LanguageServerLog,
+    TelemetryEvent,
     Toast,
     HideToast,
     OpenServerSettings,
@@ -709,7 +779,6 @@ entity_messages!(
     CancelLanguageServerWork,
     RegisterBufferWithLanguageServers,
     GitShow,
-    GitFileHistory,
     GitCreateCheckpoint,
     GitRestoreCheckpoint,
     GitCompareCheckpoints,
@@ -717,6 +786,8 @@ entity_messages!(
     GitReset,
     GitDeleteBranch,
     GitCheckoutFiles,
+    GitAddPathToGitignore,
+    GitAddPathToGitInfoExclude,
     SetIndexText,
     ToggleLspLogs,
     GetDirectoryEnvironment,
@@ -744,6 +815,7 @@ entity_messages!(
     GetDefaultBranch,
     GetTreeDiff,
     GetBlobContent,
+    LoadCommitTemplate,
     GitClone,
     GetAgentServerCommand,
     GetContextServerCommand,
@@ -753,9 +825,17 @@ entity_messages!(
     NewExternalAgentVersionAvailable,
     GitGetWorktrees,
     GitGetHeadSha,
+    GitEditRef,
+    GitRepairWorktrees,
+    GetCommitData,
+    GetInitialGraphData,
+    SearchCommits,
+    GitCreateArchiveCheckpoint,
+    GitRestoreArchiveCheckpoint,
     GitCreateWorktree,
     GitRemoveWorktree,
     GitRenameWorktree,
+    GitWorktreeCreatedAt,
     TrustWorktrees,
     RestrictWorktrees,
     FindSearchCandidatesChunk,
@@ -886,6 +966,7 @@ pub fn split_worktree_update(mut message: UpdateWorktree) -> impl Iterator<Item 
             root_name: message.root_name.clone(),
             abs_path: message.abs_path.clone(),
             root_repo_common_dir: message.root_repo_common_dir.clone(),
+            root_repo_is_linked_worktree: message.root_repo_is_linked_worktree,
             updated_entries,
             removed_entries,
             scan_id: message.scan_id,
@@ -901,6 +982,8 @@ pub fn split_repository_update(
 ) -> impl Iterator<Item = UpdateRepository> {
     let mut updated_statuses_iter = mem::take(&mut update.updated_statuses).into_iter().fuse();
     let mut removed_statuses_iter = mem::take(&mut update.removed_statuses).into_iter().fuse();
+    let branch_list = mem::take(&mut update.branch_list);
+    let branch_list_error = update.branch_list_error.take();
     std::iter::from_fn({
         let update = update.clone();
         move || {
@@ -918,6 +1001,8 @@ pub fn split_repository_update(
             Some(UpdateRepository {
                 updated_statuses,
                 removed_statuses,
+                branch_list: Vec::new(),
+                branch_list_error: None,
                 is_last_update: false,
                 ..update.clone()
             })
@@ -926,6 +1011,8 @@ pub fn split_repository_update(
     .chain([UpdateRepository {
         updated_statuses: Vec::new(),
         removed_statuses: Vec::new(),
+        branch_list,
+        branch_list_error,
         is_last_update: true,
         ..update
     }])
@@ -942,6 +1029,12 @@ impl LspQuery {
                 ("GetDocumentDiagnostics", false)
             }
             Some(lsp_query::Request::GetDefinition(_)) => ("GetDefinition", false),
+            Some(lsp_query::Request::GetEditPredictionDefinition(_)) => {
+                ("GetEditPredictionDefinition", false)
+            }
+            Some(lsp_query::Request::GetEditPredictionTypeDefinition(_)) => {
+                ("GetEditPredictionTypeDefinition", false)
+            }
             Some(lsp_query::Request::GetDeclaration(_)) => ("GetDeclaration", false),
             Some(lsp_query::Request::GetTypeDefinition(_)) => ("GetTypeDefinition", false),
             Some(lsp_query::Request::GetImplementation(_)) => ("GetImplementation", false),
@@ -949,6 +1042,7 @@ impl LspQuery {
             Some(lsp_query::Request::GetDocumentColor(_)) => ("GetDocumentColor", false),
             Some(lsp_query::Request::GetFoldingRanges(_)) => ("GetFoldingRanges", false),
             Some(lsp_query::Request::GetDocumentSymbols(_)) => ("GetDocumentSymbols", false),
+            Some(lsp_query::Request::GetDocumentLinks(_)) => ("GetDocumentLinks", false),
             Some(lsp_query::Request::InlayHints(_)) => ("InlayHints", false),
             Some(lsp_query::Request::SemanticTokens(_)) => ("SemanticTokens", false),
             None => ("<unknown>", true),
@@ -982,5 +1076,39 @@ mod tests {
             id: u32::MAX,
         };
         assert_eq!(PeerId::from_u64(peer_id.as_u64()), peer_id);
+    }
+
+    #[test]
+    fn test_split_repository_update_keeps_branch_list_on_final_chunk() {
+        let update = UpdateRepository {
+            updated_statuses: vec![
+                StatusEntry::default(),
+                StatusEntry::default(),
+                StatusEntry::default(),
+            ],
+            branch_list: vec![Branch {
+                ref_name: "refs/heads/main".into(),
+                ..Default::default()
+            }],
+            branch_list_error: Some("partial branch scan".into()),
+            ..Default::default()
+        };
+
+        let chunks = split_repository_update(update).collect::<Vec<_>>();
+
+        assert_eq!(chunks.len(), 3);
+        assert!(chunks[0].branch_list.is_empty());
+        assert!(chunks[1].branch_list.is_empty());
+        assert_eq!(chunks[2].branch_list.len(), 1);
+        assert_eq!(chunks[2].branch_list[0].ref_name, "refs/heads/main");
+        assert_eq!(chunks[0].branch_list_error, None);
+        assert_eq!(chunks[1].branch_list_error, None);
+        assert_eq!(
+            chunks[2].branch_list_error.as_deref(),
+            Some("partial branch scan")
+        );
+        assert!(!chunks[0].is_last_update);
+        assert!(!chunks[1].is_last_update);
+        assert!(chunks[2].is_last_update);
     }
 }
